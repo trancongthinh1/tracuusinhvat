@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tra cứu sinh vật biển Việt Nam</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lora:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  /* Bố cục: cột trái = tìm kiếm + kết quả; cột phải = 5 ô phân hạng, phân bố, bản đồ, ảnh & tài liệu (theo bản phác thảo) */
+  --bg:#eef3f6; --surface:#ffffff; --ink:#10283a; --muted:#587184; --line:#cfdbe3;
+  --accent:#0f5f8c; --accent-soft:#e1eef6; --deep:#0b3b5a;
+  --display:"Lora",Georgia,serif; --body:"Be Vietnam Pro",system-ui,"Segoe UI",Arial,sans-serif;
+  --r:10px;
+  --EX:#000; --EW:#542344; --CR:#d81e05; --EN:#fc7f3f; --VU:#f2c200; --NT:#cce226; --LC:#60c659; --DD:#9aa3a8;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1720; --surface:#112330; --ink:#e3eef5; --muted:#93abbb; --line:#23394a;
+  --accent:#5fb3e3; --accent-soft:#16344a; --deep:#0e2c41; color-scheme:dark;}}
+:root[data-theme="dark"]{--bg:#0b1720; --surface:#112330; --ink:#e3eef5; --muted:#93abbb; --line:#23394a;
+  --accent:#5fb3e3; --accent-soft:#16344a; --deep:#0e2c41; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+a{color:var(--accent)} a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;padding:18px 24px 8px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(22px,2.6vw,32px);margin:0;letter-spacing:.01em;text-wrap:balance;color:var(--deep)}
+:root[data-theme="dark"] h1{color:var(--ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) h1{color:var(--ink)}}
+.sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;padding:8px 24px 28px}
+@media (max-width:900px){main{grid-template-columns:1fr;padding:8px 16px 24px} header{padding:16px}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;font-weight:600}
+label{display:block;font-size:12.5px;color:var(--muted);margin:0 0 4px}
+input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.main-q{position:relative}
+.main-q input{font-size:16px;padding:11px 12px;border-color:var(--accent)}
+.ac{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1000;max-height:340px;overflow:auto;display:none}
+.ac.open{display:block}
+.ac button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 11px;font:inherit;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--line)}
+.ac button:hover,.ac button[aria-selected="true"]{background:var(--accent-soft)}
+.ac small{color:var(--muted);display:block;font-size:12px}
+.grid5{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.grid5 .full{grid-column:1/-1}
+.hint{font-size:12px;color:var(--muted);margin-top:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font:inherit;font-size:13.5px;cursor:pointer}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:3px 9px;background:var(--bg);cursor:pointer;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.list{max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-bottom:12px}
+.list button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:7px 10px;font:inherit;font-size:13.5px;color:var(--ink);cursor:pointer}
+.list button[aria-current="true"]{background:var(--accent-soft)}
+.list small{color:var(--muted)}
+.count{font-size:12.5px;color:var(--muted);margin:0 0 6px}
+.sci{font-style:italic}
+.detail h3{font-family:var(--display);font-style:italic;font-weight:500;font-size:22px;margin:0;line-height:1.25}
+.detail .vn{font-size:16px;font-weight:600;margin:2px 0 10px}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;font-size:14px}
+dl.kv dt{color:var(--muted)} dl.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.badge{display:inline-block;font-size:11px;font-weight:600;border-radius:4px;padding:1px 6px;vertical-align:1px;margin-left:4px}
+.ok{background:#dff3e3;color:#17603a} .warn{background:#fff1d6;color:#7a4b00} .off{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.src{margin:12px 0 0;padding:0;list-style:none;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.src li{border-left:3px solid var(--accent);padding:2px 0 2px 9px}
+.status{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:1100px){.status{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.status{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.st{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.st .t{font-size:12px;color:var(--muted);line-height:1.3}
+.st .v{font-size:22px;font-weight:700;line-height:1}
+.st .c{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.pill{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.15)}
+.none{color:var(--muted);font-size:14px;font-weight:500}
+.blue{background:var(--deep);color:#e8f3fa;border-color:var(--deep)}
+.blue h2{color:#9cc8e3}
+.blue a{color:#bfe3ff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+#map{height:380px;border-radius:8px;background:#cfe3ee;position:relative}
+.mapmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--muted);font-size:14px}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.photos figure{margin:0} .photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;display:block}
+.photos figcaption{font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
+.docs{margin:0;padding-left:18px;font-size:14px} .docs li{margin:3px 0}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.foot{padding:0 24px 24px;font-size:12px;color:var(--muted)}
+h1 .by{font-family:var(--body);font-weight:500;font-size:.62em;color:var(--accent);letter-spacing:.02em;white-space:nowrap}
+.dist p{margin:0 0 8px} .dist b{color:#fff}
+.lbl{display:inline-block;min-width:72px;color:#9cc8e3;font-weight:600}
+.desc h3{font-size:14px;margin:12px 0 4px;color:var(--deep)} .desc h3:first-child{margin-top:0}
+:root[data-theme="dark"] .desc h3{color:var(--ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .desc h3{color:var(--ink)}}
+.desc p{margin:0 0 6px;font-size:14px} .en{font-style:normal}
+.list .alt{color:var(--muted);font-size:12px;display:block}
+.ac .alt{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>TRA CỨU CÁC LOÀI SINH VẬT BIỂN VIỆT NAM <span class="by">- dragonthinh</span></h1>
+  <div class="sub" id="dbinfo">Đang nạp cơ sở dữ liệu…</div>
+</header>
+<main>
+  <section class="col" aria-label="Tìm kiếm và kết quả">
+    <div class="card" id="searchCard">
+      <h2>Tìm kiếm</h2>
+      <div class="main-q">
+        <label for="q">Tên tiếng Việt, tên khoa học hiện hành hoặc tên cũ</label>
+        <input type="text" id="q" autocomplete="off" placeholder="Tên hiện hành, tên cũ hoặc tên Việt: cá ngựa, Otolithoides…" aria-autocomplete="list" aria-controls="ac">
+        <div class="ac" id="ac" role="listbox"></div>
+      </div>
+      <div class="grid5">
+        <div><label for="fLop">Lớp</label><input type="text" id="fLop" list="dlLop" autocomplete="off"></div>
+        <div><label for="fBo">Bộ</label><input type="text" id="fBo" list="dlBo" autocomplete="off"></div>
+        <div><label for="fHo">Họ</label><input type="text" id="fHo" list="dlHo" autocomplete="off"></div>
+        <div><label for="fGiong">Giống</label><input type="text" id="fGiong" list="dlGiong" autocomplete="off"></div>
+        <div class="full"><label for="fLoai">Loài (tính ngữ loài)</label><input type="text" id="fLoai" autocomplete="off" placeholder="ví dụ: kuda"></div>
+      </div>
+      <datalist id="dlLop"></datalist><datalist id="dlBo"></datalist><datalist id="dlHo"></datalist><datalist id="dlGiong"></datalist>
+      <div class="chips" role="group" aria-label="Chỉ hiện loài có trong">
+        <button type="button" class="chip" data-src="sd2024" aria-pressed="false">Sách Đỏ 2024</button>
+        <button type="button" class="chip" data-src="sd2007" aria-pressed="false">Sách Đỏ 2007</button>
+        <button type="button" class="chip" data-src="tt85" aria-pressed="false">TT 85</button>
+        <button type="button" class="chip" data-src="tt88" aria-pressed="false">TT 88</button>
+        <button type="button" class="chip" data-src="iucn" aria-pressed="false">IUCN</button>
+        <button type="button" class="chip" data-src="dmcb" aria-pressed="false">DM cá biển</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button type="button" class="btn primary" id="go">Tìm</button>
+        <button type="button" class="btn" id="clear">Xóa điều kiện</button>
+      </div>
+      <p class="hint">Gõ vài ký tự là có gợi ý; không cần gõ dấu tiếng Việt. Ở ô Lớp, Bộ, Họ, Giống: chọn hoặc gõ đúng tên là danh sách loài hiện ra ngay.</p>
+    </div>
+
+    <div class="card" id="resultCard" aria-live="polite">
+      <h2>Kết quả</h2>
+      <p class="count" id="count"></p>
+      <div class="list" id="list" hidden></div>
+      <div class="detail" id="detail"></div>
+    </div>
+  </section>
+
+  <section class="col" aria-label="Thông tin loài">
+    <div class="status" id="status"></div>
+
+    <div class="card blue">
+      <div class="two">
+        <div class="dist"><h2>Phân bố thế giới</h2><div id="distW" class="small"></div></div>
+        <div class="dist"><h2>Phân bố Việt Nam</h2><div id="distVN" class="small"></div></div>
+      </div>
+    </div>
+
+    <div class="card desc">
+      <h2>Mô tả sơ lược (hình thái, đặc điểm sinh học)</h2>
+      <div id="desc"></div>
+    </div>
+
+    <div class="card">
+      <h2>Bản đồ quan sát trên thế giới (iNaturalist)</h2>
+      <div id="map"><div class="mapmsg" id="mapmsg">Chọn một loài để xem bản đồ.</div></div>
+      <p class="small muted" id="mapnote" style="margin:8px 0 0"></p>
+    </div>
+
+    <div class="two">
+      <div class="card"><h2>Hình ảnh (iNaturalist)</h2><div id="photos" class="photos"></div><p class="small muted" id="photonote" style="margin:8px 0 0"></p></div>
+      <div class="card"><h2>Tài liệu (FishBase / SeaLifeBase)</h2><ul class="docs" id="docs"></ul></div>
+    </div>
+  </section>
+</main>
+<p class="foot">Nguồn dữ liệu: Sách Đỏ Việt Nam 2007 và 2024 (Tập 1. Động vật); Thông tư 85/2025/TT-BNNMT, Phụ lục I; Thông tư 88/2025/TT-BNNMT, Phụ lục III; IUCN Red List (bản xuất 2026); Danh mục cá biển Việt Nam, Tập 1–5 (nhận dạng chữ từ bản quét, đã rà soát). Tên khoa học hiện hành, tên đồng danh và lớp/bộ/họ theo WoRMS (marinespecies.org), tra ngày 20/11/2026. Phân bố thế giới và mô tả theo FishBase / SeaLifeBase.</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+"use strict";
+const SRC={sd2007:"Sách Đỏ Việt Nam 2007",sd2024:"Sách Đỏ Việt Nam 2024",tt85:"Thông tư 85/2025/TT-BNNMT (Phụ lục I)",tt88:"Thông tư 88/2025/TT-BNNMT (Phụ lục III)",iucn:"IUCN Red List 2026",dmcb:"Danh mục cá biển Việt Nam"};
+const CAT={EX:"Tuyệt chủng",EW:"Tuyệt chủng ngoài tự nhiên",CR:"Cực kỳ nguy cấp",EN:"Nguy cấp",VU:"Sẽ nguy cấp",NT:"Gần bị đe dọa",LR:"Ít nguy cấp (LR)",LC:"Ít lo ngại",DD:"Thiếu dẫn liệu"};
+const FISH=new Set(["actinopterygii","actinopteri","elasmobranchii","chondrichthyes","holocephali","osteichthyes","myxini","petromyzonti","teleostei","sarcopterygii","leptocardii"]);
+let DB=[],SLB={},cur=null,onlySrc=new Set(),map=null,layer=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fold=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();
+const slug=k=>k.replace(/[^a-z0-9]+/g,"-");
+const FILTERS=[["fLop","cls","dlLop"],["fBo","order","dlBo"],["fHo","fam","dlHo"],["fGiong","gen","dlGiong"]];
+
+// in nghiêng phần tên loài, chữ đứng phần tác giả
+function sciHtml(s){
+  const w=String(s||"").split(" "); let i=0,out=[];
+  while(i<w.length && (i===0 || /^[a-z×\-]+\.?$/.test(w[i]) || /^\([A-Z][a-z]+\)$/.test(w[i]))){ if(i>0&&["de","von","van","in","et","and","ex"].includes(w[i]))break; out.push(w[i]); i++; }
+  return `<span class="sci">${esc(out.join(" "))}</span>${i<w.length?" "+esc(w.slice(i).join(" ")):""}`;
+}
+const nameOnly=s=>{const w=String(s||"").split(" "),o=[];for(let i=0;i<w.length;i++){if(i>0&&!/^[a-z×\-]+$/.test(w[i])&&!/^\([A-Z][a-z]+\)$/.test(w[i]))break;o.push(w[i]);}return o.join(" ");};
+
+async function load(){
+  const r=await fetch("data.json"); DB=await r.json();
+  try{const r2=await fetch("sealifebase.json"); if(r2.ok) SLB=await r2.json();}catch(e){}
+  for(const d of DB){
+    d.syn=d.syn||[];
+    d._sci=fold(nameOnly(d.sci)); d._vn=d.vn.map(fold); d._syn=d.syn.map(x=>fold(nameOnly(x)));
+    d._f=[d._sci,...d._vn,...d._syn].join(" | ");
+    d._w=Object.keys(d.src).length+(d.src.sd2024||d.src.tt85||d.src.tt88||d.src.dmcb?5:0);
+    for(const [,k] of FILTERS) d["_"+k]=fold(d[k]);
+  }
+  updateLists();
+  const n=k=>DB.filter(d=>d.src[k]).length;
+  $("dbinfo").textContent=`${DB.length.toLocaleString("vi-VN")} loài · Sách Đỏ 2024: ${n("sd2024")} · 2007: ${n("sd2007")} · TT85: ${n("tt85")} · TT88: ${n("tt88")} · IUCN: ${n("iucn").toLocaleString("vi-VN")} · DM cá biển: ${n("dmcb").toLocaleString("vi-VN")}`+(Object.keys(SLB).length?` · FishBase/SeaLifeBase: ${Object.keys(SLB).length.toLocaleString("vi-VN")}`:"");
+  const h=location.hash.slice(1); const start=DB.find(d=>slug(d.k)===h)||DB.find(d=>d.k==="rhincodon typus")||DB[0];
+  select(start);
+}
+
+// ---------- ô Lớp/Bộ/Họ/Giống: danh sách gợi ý thu hẹp dần theo ô phía trên ----------
+function filterVals(upto){ const v={}; for(const [id,k] of FILTERS.slice(0,upto)) v[k]=fold($(id).value.trim()); return v; }
+function updateLists(){
+  FILTERS.forEach(([id,k,dl],i)=>{
+    const v=filterVals(i);
+    const set=new Set(DB.filter(d=>Object.entries(v).every(([kk,vv])=>!vv||d["_"+kk]===vv)).map(d=>d[k]).filter(Boolean));
+    $(dl).innerHTML=[...set].sort().map(x=>`<option value="${esc(x)}">`).join("");
+  });
+}
+const exactVal=(k,val)=>{const f=fold(val.trim()); return f && DB.some(d=>d["_"+k]===f);};
+
+// ---------- tìm kiếm ----------
+function matchInfo(d,q){ // điểm khớp + tên cũ đã khớp (nếu có)
+  if(d._sci.startsWith(q)) return [100,null];
+  if(d._vn.some(v=>v.startsWith(q)||v.startsWith("ca "+q))) return [90,null];
+  let i=d._syn.findIndex(v=>v.startsWith(q)); if(i>=0) return [85,d.syn[i]];
+  if(d._vn.some(v=>v.includes(" "+q))||d._sci.includes(" "+q)) return [70,null];
+  i=d._syn.findIndex(v=>v.includes(" "+q)); if(i>=0) return [65,d.syn[i]];
+  if(d._f.includes(q)){ i=d._syn.findIndex(v=>v.includes(q)); return [40,i>=0&&!d._sci.includes(q)&&!d._vn.some(v=>v.includes(q))?d.syn[i]:null]; }
+  return [-1,null];
+}
+function rowHtml(d,alt){
+  return `${sciHtml(bin(d))} <small>${esc(d.vn[0]||"")}</small>${alt?`<span class="alt">tên cũ: ${sciHtml(alt)}</span>`:""}`;
+}
+function suggest(){
+  const q=fold($("q").value.trim()), ac=$("ac");
+  if(q.length<2){ac.classList.remove("open");return;}
+  const hits=[]; for(const d of DB){const [s,alt]=matchInfo(d,q); if(s>=0) hits.push([s+d._w,d,alt]);}
+  hits.sort((a,b)=>b[0]-a[0]);
+  ac.innerHTML=hits.slice(0,12).map(([,d,alt],i)=>`<button type="button" role="option" data-k="${esc(d.k)}" aria-selected="${i===0}">${sciHtml(bin(d))}<small>${esc(d.vn.slice(0,2).join(" · ")||"—")}${alt?` · <span class="alt">tên cũ: ${esc(nameOnly(alt))}</span>`:""}</small></button>`).join("")||`<div style="padding:8px 11px" class="muted small">Không có gợi ý.</div>`;
+  ac.classList.add("open");
+}
+function filtered(){
+  const q=fold($("q").value.trim()); const F={}; for(const [id,k] of FILTERS) F[k]=fold($(id).value.trim()); const ep=fold($("fLoai").value.trim());
+  const res=[];
+  for(const d of DB){
+    let sc=0,alt=null;
+    if(q){ [sc,alt]=matchInfo(d,q); if(sc<0) continue; }
+    let ok=true;
+    for(const k in F) if(F[k] && !d["_"+k].startsWith(F[k])){ok=false;break;}
+    if(!ok) continue;
+    if(ep && !fold(d.k.split(" ")[1]||"").startsWith(ep)) continue;
+    for(const s of onlySrc) if(!d.src[s]){ok=false;break;}
+    if(ok) res.push({d,sc,alt});
+  }
+  return res.sort((a,b)=>(b.sc-a.sc)||(b.d._w-a.d._w)||a.d.k.localeCompare(b.d.k));
+}
+function search(){
+  $("ac").classList.remove("open");
+  const res=filtered(), L=$("list");
+  $("count").textContent=res.length?`Tìm thấy ${res.length.toLocaleString("vi-VN")} loài${res.length>300?" (hiện 300 loài đầu)":""}. Bấm vào tên để xem.`:"Không tìm thấy loài nào khớp điều kiện. Hãy bớt một điều kiện hoặc kiểm tra chính tả.";
+  L.hidden=!res.length;
+  L.innerHTML=res.slice(0,300).map(({d,alt})=>`<button type="button" data-k="${esc(d.k)}">${rowHtml(d,alt)}</button>`).join("");
+  if(res.length) select(res[0].d,true);
+}
+const byK=k=>DB.find(d=>d.k===k);
+function select(d,keepList){
+  cur=d; history.replaceState(null,"","#"+slug(d.k));
+  document.querySelectorAll("#list button").forEach(b=>b.setAttribute("aria-current",b.dataset.k===d.k));
+  if(!keepList && $("list").hidden) $("count").textContent="";
+  renderDetail(d); renderStatus(d); renderDist(d,null); renderDesc(d); renderDocs(d);
+  remote(d);
+}
+
+// ---------- kết quả ----------
+function dmList(d){ return d.src.dmcb?[d.src.dmcb,...(d.src.dmcb2||[])]:[]; }
+function srcLines(d){
+  const s=d.src,li=[];
+  if(s.sd2024) li.push(`<li><b>${SRC.sd2024}</b>, ${esc(s.sd2024.nhom)}, TT ${s.sd2024.tt}: ${esc(s.sd2024.vn)} – ${sciHtml(s.sd2024.sci)}</li>`);
+  if(s.sd2007) li.push(`<li><b>${SRC.sd2007}</b>, TT ${s.sd2007.tt}: ${esc(s.sd2007.vn)} – ${sciHtml(s.sd2007.sci)}</li>`);
+  if(s.tt85) li.push(`<li><b>${SRC.tt85}</b>, ${esc(s.tt85.nhom)} – ${esc(s.tt85.phan_nhom)}, TT ${s.tt85.tt}: ${esc(s.tt85.vn)}</li>`);
+  if(s.tt88) li.push(`<li><b>${SRC.tt88}</b>, ${esc(s.tt88.nhom)}, TT ${s.tt88.tt}: ${esc(s.tt88.vn)}</li>`);
+  for(const m of dmList(d)) li.push(`<li><b>${SRC.dmcb}</b>, ${esc(m.tap)}, số ${m.tt}${m.trang?`, tr. ${m.trang}`:""}: ${esc(m.vn)} – ${sciHtml(m.sci+(m.tac_gia?" "+m.tac_gia:""))}</li>`);
+  if(s.iucn) li.push(`<li><b>${SRC.iucn}</b>: đánh giá năm ${s.iucn.nam}${s.iucn.he?`, ${esc(s.iucn.he)}`:""}</li>`);
+  return li.join("");
+}
+function renderDetail(d){
+  const dash=`<span class="muted">—</span>`;
+  const syn=d.syn.filter(x=>fold(nameOnly(x))!==d._sci);
+  const SHOW=15;
+  const synHtml=syn.length?`${syn.slice(0,SHOW).map(sciHtml).join("; ")}${syn.length>SHOW?` <button type="button" class="chip" id="moreSyn">+ ${syn.length-SHOW} tên khác</button>`:""}`:`<span class="muted">Không có</span>`;
+  $("detail").innerHTML=`<h3>${sciHtml(d.sci)}</h3><div class="vn">${esc(d.vn[0]||"Chưa có tên tiếng Việt")}</div>
+  <dl class="kv">
+  <dt>Tên khoa học</dt><dd>${sciHtml(d.sci)}${d.acc?`<br><span class="badge warn">WoRMS xếp là đồng danh của</span> ${sciHtml(d.acc)}`:""}</dd>
+  <dt>Tên tiếng Việt</dt><dd>${d.vn.length?esc(d.vn.join("; ")):dash}</dd>
+  <dt>Lớp</dt><dd>${d.cls?esc(d.cls):dash}</dd>
+  <dt>Bộ</dt><dd>${d.order?esc(d.order):dash}</dd>
+  <dt>Họ</dt><dd>${d.fam?esc(d.fam):dash}</dd>
+  <dt>Tên đồng danh</dt><dd id="synCell">${synHtml}</dd></dl>
+  <ul class="src" aria-label="Có trong các danh mục">${srcLines(d)}</ul>
+  <p class="small" style="margin:10px 0 0">${d.aid?`<a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id=${d.aid}" target="_blank" rel="noopener">Xem trên WoRMS (AphiaID ${d.aid})</a>`:`<a href="https://www.marinespecies.org/aphia.php?p=taxlist&tName=${encodeURIComponent(bin(d))}" target="_blank" rel="noopener">Tra trên WoRMS</a>`}</p>`;
+  const mb=$("moreSyn"); if(mb) mb.addEventListener("click",()=>{$("synCell").innerHTML=syn.map(sciHtml).join("; ");});
+}
+function box(title,code,crit,extra){
+  const c=(code||"").trim().split(" ")[0];
+  const col=getComputedStyle(document.documentElement).getPropertyValue("--"+c)||"";
+  return `<div class="st"><div class="t">${title}</div>${code?`<div class="v pill">${col?`<span class="dot" style="background:${col}"></span>`:""}${esc(code)}</div><div class="c">${esc(CAT[c]||"")}${crit?` · ${esc(crit)}`:""}${extra?`<br>${extra}`:""}</div>`:`<div class="none">Không có trong danh mục</div>`}</div>`;
+}
+function renderStatus(d){
+  const s=d.src;
+  const o7=s.sd2007?s.sd2007.phan_hang.match(/^\s*(EX|EW|CR|EN|VU|LR|DD)/):null;
+  $("status").innerHTML=
+    box("Phân hạng theo Sách Đỏ 2007",o7?o7[1]:"",s.sd2007?s.sd2007.phan_hang.replace(/^\s*\S+\s*/,""):"")+
+    box("Phân hạng theo Sách Đỏ 2024",s.sd2024?s.sd2024.bac:"",s.sd2024?s.sd2024.tc:"")+
+    (s.tt85?`<div class="st"><div class="t">Nhóm theo TT 85/2025/TT-BNNMT</div><div class="v">${esc((s.tt85.danh_muc||s.tt85.nhom).split(" (")[0])}</div><div class="c">${esc(s.tt85.danh_muc)}${s.tt85.uu_tien?`<br>Loài ưu tiên bảo vệ: ${esc(s.tt85.uu_tien)}`:""}</div></div>`:box("Nhóm theo TT 85/2025/TT-BNNMT","",""))+
+    (s.tt88?`<div class="st"><div class="t">Nhóm theo TT 88/2025/TT-BNNMT</div><div class="v">${esc(s.tt88.nhom)}</div><div class="c">${s.tt88.nhom==="Nhóm I"?"Loài thủy sản nguy cấp, quý, hiếm":"Cấm khai thác: "+esc(s.tt88.cam_khai_thac||"—")+"<br>Kích thước tối thiểu: "+esc(s.tt88.kich_thuoc||"—")+(s.tt88.kich_thuoc?" cm":"")}</div></div>`:box("Nhóm theo TT 88/2025/TT-BNNMT","",""))+
+    box("Phân hạng theo IUCN Red List 2026",s.iucn?s.iucn.bac:"",s.iucn?s.iucn.tc:"",s.iucn?`Năm: ${s.iucn.nam}${s.iucn.xu_huong?` · Xu hướng: ${esc(s.iucn.xu_huong)}`:""}`:"");
+}
+const isFish=d=>FISH.has(fold(d.cls))||!!d.src.dmcb;
+function bin(d){const w=nameOnly(d.sci).split(" ").filter(x=>!/^\(/.test(x));return w.slice(0,2).join(" ")||d.k;}
+function baseOf(d){return isFish(d)?["https://www.fishbase.se","FishBase"]:["https://www.sealifebase.ca","SeaLifeBase"];}
+function summaryUrl(d){const s=SLB[d.k]; if(s&&s.u) return s.u; const [b]=baseOf(d); return `${b}/summary/${encodeURIComponent(bin(d).replace(" ","-"))}.html`;}
+
+// ---------- phân bố ----------
+function renderDist(d,wd){
+  const s=SLB[d.k], [,nm]=baseOf(d), url=summaryUrl(d);
+  let h="";
+  if(s&&s.pb){
+    h=`<p>${esc(s.pb)}</p><p class="small">Nguồn: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(s.db||nm)} – mục Distribution</a></p>`;
+  }else{
+    if(wd&&wd.length){ const loc=[...new Set(wd.map(x=>x.locality).filter(Boolean))]; h+=`<p>${esc(loc.slice(0,25).join("; "))}${loc.length>25?` … (+${loc.length-25} vùng)`:""} <span class="badge ok">WoRMS</span></p>`; }
+    else if(wd===null) h+=`<p style="color:#9cc8e3">Đang tải…</p>`;
+    h+=`<p class="small">Chưa có mục Distribution của ${nm} trong dữ liệu trang. <a href="${esc(url)}" target="_blank" rel="noopener">Xem mục Distribution trên ${nm}</a></p>`;
+  }
+  $("distW").innerHTML=h;
+  const ms=dmList(d);
+  $("distVN").innerHTML=ms.length?ms.map((m,i)=>`${ms.length>1?`<p class="small" style="color:#9cc8e3">${esc(m.tap)}, số ${m.tt}: ${sciHtml(m.sci)}</p>`:""}
+    <p><span class="lbl">Thế giới:</span> ${m.pbtg&&m.pbtg!=="-"?esc(m.pbtg):"<i>sách không ghi</i>"}</p>
+    <p><span class="lbl">Việt Nam:</span> ${m.pbvn&&m.pbvn!=="-"?esc(m.pbvn):"<i>sách không ghi</i>"}</p>`).join("")+
+    `<p class="small" style="color:#9cc8e3">Theo Danh mục cá biển Việt Nam, ${esc(ms[0].tap)}${ms[0].trang?`, trang ${ms[0].trang}`:""}.</p>`
+    :`<p>Chưa có trong Danh mục cá biển Việt Nam.${d.src.sd2024||d.src.tt88||d.src.tt85?" Loài này có tên trong danh mục bảo tồn của Việt Nam (xem các ô phía trên).":""}</p>`;
+}
+// ---------- mô tả sơ lược ----------
+function renderDesc(d){
+  const s=SLB[d.k], [,nm]=baseOf(d), url=summaryUrl(d);
+  if(s&&(s.ht||s.sh||s.kt)){
+    $("desc").innerHTML=(s.kt?`<h3>Kích thước, môi trường sống</h3><p>${esc(s.kt)}</p>`:"")+
+      (s.ht?`<h3>Hình thái</h3><p lang="en">${esc(s.ht)}</p>`:"")+
+      (s.sh?`<h3>Đặc điểm sinh học</h3><p lang="en">${esc(s.sh)}</p>`:"")+
+      `<p class="small muted">Nguồn: <a href="${esc(url)}" target="_blank" rel="noopener">${esc(s.db||nm)}</a>${s.v?` (bản dữ liệu ${esc(s.v)})`:""}. Nội dung giữ nguyên tiếng Anh theo nguồn.</p>`;
+  }else{
+    $("desc").innerHTML=`<p class="muted">Chưa có mô tả của ${nm} cho loài này trong dữ liệu trang.</p><p class="small"><a href="${esc(url)}" target="_blank" rel="noopener">Xem mục Morphology và Biology trên ${nm}</a></p>`;
+  }
+}
+function renderDocs(d){
+  const b=bin(d),u=b.replace(" ","-"),[base,nm]=baseOf(d);
+  $("docs").innerHTML=[
+    [summaryUrl(d),`${nm}: trang tóm tắt loài`],
+    [`${base}/photos/PicturesSummary.php?Genus=${encodeURIComponent(b.split(" ")[0])}&Species=${encodeURIComponent(b.split(" ")[1]||"")}`,`${nm}: ảnh tư liệu`],
+    [`${base}/Nomenclature/SynonymsList.php?Genus=${encodeURIComponent(b.split(" ")[0])}&Species=${encodeURIComponent(b.split(" ")[1]||"")}`,`${nm}: danh sách tên đồng danh`],
+    [`https://www.iucnredlist.org/search?query=${encodeURIComponent(b)}`,"IUCN Red List: trang đánh giá"],
+    [`https://www.gbif.org/species/search?q=${encodeURIComponent(b)}`,"GBIF: dữ liệu ghi nhận"],
+  ].map(([h,t])=>`<li><a href="${h}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("");
+}
+
+// ---------- dữ liệu trực tuyến: WoRMS (phân bố dự phòng) + iNaturalist ----------
+async function j(url){const r=await fetch(url);if(r.status===204)return null;if(!r.ok)throw new Error(r.status);return r.json();}
+async function remote(d){
+  const b=bin(d), me=d;
+  $("photos").innerHTML=`<p class="muted small" style="margin:0">Đang tải ảnh…</p>`; $("photonote").textContent="";
+  if(!(SLB[d.k]&&SLB[d.k].pb)){
+    (async()=>{
+      try{
+        let id=d.aid;
+        if(!id){ const recs=await j(`https://www.marinespecies.org/rest/AphiaRecordsByName/${encodeURIComponent(b)}?like=false&marine_only=false`); const w=(recs||[]).find(x=>x.status==="accepted")||(recs||[])[0]; id=w&&(w.valid_AphiaID||w.AphiaID); }
+        const dist=id?await j(`https://www.marinespecies.org/rest/AphiaDistributionsByAphiaID/${id}`).catch(()=>null):null;
+        if(cur===me) renderDist(d,dist||[]);
+      }catch(e){ if(cur===me) renderDist(d,[]); }
+    })();
+  }
+  try{
+    const t=await j(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(b)}&rank=species&per_page=5`);
+    if(cur!==me)return;
+    const tx=(t.results||[]).find(x=>x.name.toLowerCase()===b.toLowerCase())||(t.results||[])[0];
+    if(!tx){noTaxon(b);return;}
+    const full=await j(`https://api.inaturalist.org/v1/taxa/${tx.id}`); if(cur!==me)return;
+    const ph=((full.results[0]||{}).taxon_photos||[]).slice(0,9).map(p=>p.photo);
+    $("photos").innerHTML=ph.length?ph.map(p=>`<figure><a href="https://www.inaturalist.org/photos/${p.id}" target="_blank" rel="noopener"><img src="${esc(p.medium_url||p.url)}" alt="${esc(b)}" loading="lazy"></a><figcaption>${esc(p.attribution||"")}</figcaption></figure>`).join(""):`<p class="muted small" style="margin:0">iNaturalist chưa có ảnh cho loài này.</p>`;
+    $("photonote").innerHTML=`<a href="https://www.inaturalist.org/taxa/${tx.id}" target="_blank" rel="noopener">Xem loài trên iNaturalist</a> · ${(tx.observations_count||0).toLocaleString("vi-VN")} quan sát`;
+    showMap(tx.id,tx.observations_count);
+  }catch(e){
+    if(cur!==me)return;
+    $("photos").innerHTML=`<p class="small" style="margin:0">Trang này cần chạy trên máy chủ có kết nối Internet để tải ảnh. <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(b)}" target="_blank" rel="noopener">Mở ảnh trên iNaturalist</a></p>`;
+    $("mapmsg").innerHTML=`Không tải được bản đồ iNaturalist trong môi trường xem này.<br><a href="https://www.inaturalist.org/observations?subview=map&taxon_name=${encodeURIComponent(b)}" target="_blank" rel="noopener">Mở bản đồ quan sát trên iNaturalist</a>`;
+    $("mapmsg").style.display="flex"; if(layer){map.removeLayer(layer);layer=null;}
+  }
+}
+function noTaxon(b){
+  $("photos").innerHTML=`<p class="muted small" style="margin:0">iNaturalist chưa có loài “${esc(b)}”.</p>`;
+  $("mapmsg").textContent="iNaturalist chưa có quan sát nào cho tên này."; $("mapmsg").style.display="flex"; if(layer){map.removeLayer(layer);layer=null;}
+}
+function initMap(){
+  if(map||!window.L)return;
+  map=L.map("map",{worldCopyJump:true,minZoom:1}).setView([12,108],2);
+  const bases=[
+    ["Đại dương (Esri)",L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",{maxZoom:10,attribution:"Nền: Esri, GEBCO, NOAA"})],
+    ["Bản đồ sáng (CARTO)",L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:12,subdomains:"abcd",attribution:"© OpenStreetMap, © CARTO"})],
+    ["OpenStreetMap",L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:12,attribution:"© OpenStreetMap",referrerPolicy:"strict-origin-when-cross-origin"})]
+  ];
+  let bi=0,errs=0,oks=0;
+  const use=i=>{bases.forEach(([,l])=>map.hasLayer(l)&&map.removeLayer(l)); bi=i; errs=0; oks=0; bases[i][1].addTo(map).bringToBack();};
+  bases.forEach(([,l],i)=>{
+    l.on("tileerror",()=>{ if(i===bi && ++errs>=4 && oks===0 && bi<bases.length-1) use(bi+1); });
+    l.on("tileload",()=>{ if(i===bi) oks++; });
+  });
+  use(0);
+  L.control.layers(Object.fromEntries(bases),{},{collapsed:true}).addTo(map);
+}
+function showMap(id,n){
+  initMap(); if(!map)return; if(layer)map.removeLayer(layer);
+  layer=L.tileLayer(`https://api.inaturalist.org/v1/grid/{z}/{x}/{y}.png?taxon_id=${id}&color=%23d81e05`,{maxZoom:12,attribution:"iNaturalist"}).addTo(map);
+  $("mapmsg").style.display="none";
+  $("mapnote").innerHTML=`Mỗi ô đỏ là vùng có quan sát được ghi nhận trên iNaturalist (${(n||0).toLocaleString("vi-VN")} quan sát). <a href="https://www.inaturalist.org/observations?subview=map&taxon_id=${id}" target="_blank" rel="noopener">Mở bản đồ đầy đủ</a>`;
+  setTimeout(()=>map.invalidateSize(),50);
+}
+
+// ---------- sự kiện ----------
+let acIdx=0;
+$("q").addEventListener("input",()=>{acIdx=0;suggest();});
+$("q").addEventListener("keydown",e=>{
+  const bs=[...$("ac").querySelectorAll("button")];
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ if(!bs.length)return; e.preventDefault(); acIdx=(acIdx+(e.key==="ArrowDown"?1:-1)+bs.length)%bs.length; bs.forEach((b,i)=>b.setAttribute("aria-selected",i===acIdx)); bs[acIdx].scrollIntoView({block:"nearest"}); }
+  else if(e.key==="Enter"){ e.preventDefault(); if($("ac").classList.contains("open")&&bs[acIdx]){ pick(bs[acIdx].dataset.k);} else search(); }
+  else if(e.key==="Escape") $("ac").classList.remove("open");
+});
+function pick(k){const d=byK(k); $("ac").classList.remove("open"); $("q").value=bin(d); $("list").hidden=true; $("count").textContent=""; select(d);}
+$("ac").addEventListener("click",e=>{const b=e.target.closest("button[data-k]"); if(b) pick(b.dataset.k);});
+document.addEventListener("click",e=>{if(!e.target.closest(".main-q"))$("ac").classList.remove("open");});
+$("list").addEventListener("click",e=>{const b=e.target.closest("button[data-k]"); if(b) select(byK(b.dataset.k),true);});
+$("go").addEventListener("click",search);
+FILTERS.forEach(([id,k],i)=>{
+  const el=$(id);
+  const run=()=>{ updateLists(); if(exactVal(k,el.value)) search(); };
+  el.addEventListener("input",run);
+  el.addEventListener("change",run);
+  el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();updateLists();search();}});
+});
+$("fLoai").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();search();}});
+$("clear").addEventListener("click",()=>{["q","fLop","fBo","fHo","fGiong","fLoai"].forEach(id=>$(id).value=""); onlySrc.clear(); document.querySelectorAll(".chip[data-src]").forEach(c=>c.setAttribute("aria-pressed","false")); $("list").hidden=true; $("count").textContent=""; updateLists();});
+document.querySelectorAll(".chip[data-src]").forEach(c=>c.addEventListener("click",()=>{const on=c.getAttribute("aria-pressed")!=="true"; c.setAttribute("aria-pressed",on); on?onlySrc.add(c.dataset.src):onlySrc.delete(c.dataset.src); search();}));
+window.addEventListener("hashchange",()=>{const d=DB.find(x=>slug(x.k)===location.hash.slice(1)); if(d&&d!==cur)select(d);});
+load().catch(e=>{$("dbinfo").textContent="Không nạp được dữ liệu (data.json). Hãy mở trang qua một máy chủ web, không mở trực tiếp từ ổ đĩa.";});
+</script>
+</body>
+</html>
